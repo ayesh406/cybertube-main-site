@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CyberTube load</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#060607;
+      --neon:#39ff14;
+      --accent:#00d0ff;
+      --muted:rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(0,208,255,0.02), transparent),
+                  linear-gradient(180deg, #050505 0%, #0a0a0a 100%);
+      font-family: 'Share Tech Mono', monospace;
+      color:var(--neon);
+      overflow:hidden;
+    }
+
+    canvas#bgCanvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+    .scanlines{pointer-events:none;position:fixed;inset:0;z-index:3;mix-blend-mode:overlay;background-image:linear-gradient(transparent 92%, rgba(255,255,255,0.02) 100%);background-size:100% 4px;opacity:0.6}
+
+    .wrap{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px}
+    .card{width:min(980px,94%);border-radius:14px;padding:32px 28px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);box-shadow:0 10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);backdrop-filter: blur(6px);border:1px solid var(--muted);display:flex;gap:20px;align-items:center;overflow:hidden}
+
+    .logo{
+      width:140px;
+      height:140px;
+      border-radius:10px;
+      flex:0 0 140px;
+      display:grid;
+      place-items:center;
+      background: linear-gradient(135deg, rgba(0,208,255,0.06), rgba(57,255,20,0.03));
+      box-shadow:0 6px 30px rgba(0,0,0,0.6), 0 0 30px rgba(57,255,20,0.02) inset;
+      border:1px solid rgba(57,255,20,0.08);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 10px rgba(57,255,20,0.4));
+    }
+
+    .content{flex:1}
+    h1{font-family:Inter, system-ui, sans-serif;font-weight:700;margin:0 0 6px 0;font-size:28px;color:var(--neon);}
+    p.lead{margin:0 0 14px 0;color:rgba(57,255,20,0.85)}
+    .terminal{background:rgba(0,0,0,0.45);padding:16px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-size:13px;line-height:1.4;color:#00FF00;max-height:220px;overflow:hidden;position:relative}
+    .typed{font-weight:600;color:var(--accent)}
+
+    @media (max-width:640px){
+      .card{flex-direction:column;align-items:flex-start;padding:20px}
+      .logo{width:96px;height:96px;flex:0 0 96px}
+      h1{font-size:20px}
+    }
+
+    @keyframes neonglow{
+      0%{text-shadow:0 0 8px rgba(57,255,20,0.06)}
+      50%{text-shadow:0 0 18px rgba(0,208,255,0.08)}
+      100%{text-shadow:0 0 8px rgba(57,255,20,0.06)}
+    }
+    .neon{animation:neonglow 3s infinite ease-in-out}
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">
+        <img src="nav-logo.jpg" alt="cyber-logo">
+      </div>
+
+      <div class="content">
+        <h1 class="neon">CyberTube</h1>
+        <p class="lead">Secure. Learn. Test — legally. <span class="typed" id="typedText">Initializing...</span></p>
+        <div class="terminal" id="terminal"><div id="termLines">-- booting secure probe --</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== CONFIGURE YOUR ANIMATION SPEED HERE ======
+    const SPEED = {
+      charDelay: 2,     // milliseconds per character
+      randomDelay: 3,   // random extra delay
+      linePause: 250,    // pause after each line
+      redirectDelay: 1000, // delay before redirect (after final line)
+      redirectUrl: "main.html" // target site
+    };
+    // ==================================================
+
+    // Canvas animation
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    let W, H, cols, colWidth, drops;
+    function resize(){
+      W = canvas.width = innerWidth;
+      H = canvas.height = innerHeight;
+      colWidth = Math.max(12, Math.floor(innerWidth/80));
+      cols = Math.floor(W / colWidth) + 1;
+      drops = Array(cols).fill(0).map(()=>Math.floor(Math.random()*H));
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function drawBg(){
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      ctx.fillRect(0,0,W,H);
+      ctx.font = Math.max(12, Math.floor(W/90)) + "px monospace";
+      for(let i=0;i<cols;i++){
+        const x = i*colWidth;
+        const y = drops[i]*(parseInt(ctx.font)||13);
+        const char = String.fromCharCode(33 + Math.random()*94);
+        ctx.fillStyle = "#00FF00";
+        ctx.fillText(char, x+2, y);
+        ctx.fillStyle = "rgba(0,208,255,0.5)";
+        ctx.fillText(char, x+2, y-(parseInt(ctx.font)||13));
+        if(y > H + Math.random()*1000) drops[i]=0;
+        drops[i]++;
+      }
+      requestAnimationFrame(drawBg);
+    }
+    drawBg();
+
+    // Typed text animation
+    const lines = [
+      "[+] Secure channel: established",
+      "[+] Fingerprint: 3b:7f:2c:9a:11:d4",
+      "[+] Policy check: PASS",
+      "[>] Loading modules: core, sandbox, logger",
+      "[>] Running preflight security tests",
+      "[√] Safe environment verified",
+      "[*] Welcome to Ethical Hacking Portal — read the rules and stay legal."
+    ];
+
+    const termEl = document.getElementById("termLines");
+    const typedEl = document.getElementById("typedText");
+
+    function typeLine(line, cb){
+      termEl.innerHTML += "<div></div>";
+      const el = termEl.lastElementChild;
+      let i=0;
+      (function type(){
+        if(i<=line.length){
+          el.textContent = line.slice(0,i);
+          i++;
+          setTimeout(type, SPEED.charDelay + Math.random()*SPEED.randomDelay);
+        } else {
+          setTimeout(cb, SPEED.linePause);
+        }
+      })();
+    }
+
+    function runSequence(i=0){
+      if(i>=lines.length){
+        typedEl.textContent = "Ready — opening site...";
+        typedEl.animate([{opacity:0.5},{opacity:1},{opacity:0.5}],{duration:1600,iterations:Infinity});
+        setTimeout(()=>{ window.location.href = SPEED.redirectUrl; }, SPEED.redirectDelay);
+        return;
+      }
+      typeLine(lines[i], ()=>runSequence(i+1));
+    }
+
+    runSequence();
+  </script>
+</body>
+</html>
